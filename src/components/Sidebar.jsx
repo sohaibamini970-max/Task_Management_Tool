@@ -3,41 +3,44 @@ import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import {
   LayoutDashboard,
   ListTodo,
-  CheckCircle2,
   ShieldCheck,
   X,
   LogOut,
   TrendingUp,
-  ChevronRight,
-  ChevronDown,
-  ListFilter,
-  Clock,
-  AlertTriangle,
   MessageSquare,
-  PlusCircle, // 👈 Added for Manage Tasks
+  PlusCircle,
+  ChevronRight, ChevronDown, ListFilter, CheckCircle2, Clock, AlertTriangle, Timer
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 
 /* ================= USER LINKS ================= */
-const userTrackingLinks = [
-  { to: "/tracking", label: "View All", icon: ListFilter, filter: "all" },
-  { to: "/tracking?filter=completed", label: "Completed", icon: CheckCircle2, filter: "completed" },
-  { to: "/tracking?filter=pending", label: "Pending", icon: Clock, filter: "pending" },
-  { to: "/tracking?filter=overdue", label: "Overdue", icon: AlertTriangle, filter: "overdue" },
-];
 
-const userMainLinks = [
+// 1. Define the links in the exact order we want them
+const userMainLinksTop = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/tasks", label: "My Tasks", icon: ListTodo },
 ];
 
+const userMainLinksBottom = [
+  { to: "/messages", label: "Messages", icon: MessageSquare },
+];
+
+
 /* ================= ADMIN LINKS ================= */
 const adminMainLinks = [
   { to: "/admin/dashboard", label: "Admin Home", icon: LayoutDashboard },
-  { to: "/admin/create-task", label: "Manage Tasks", icon: PlusCircle }, // 👈 Updated
-  { to: "/admin/all-tasks", label: "Task Details", icon: ListTodo },     // 👈 Updated
+  { to: "/admin/create-task", label: "Manage Tasks", icon: PlusCircle },
+  { to: "/admin/all-tasks", label: "Task Details", icon: ListTodo },
   { to: "/admin/tracking", label: "Tracking", icon: TrendingUp },
   { to: "/admin/messages", label: "Messages", icon: MessageSquare },
+];
+
+const adminTrackingLinks = [
+  { to: "/admin/tracking", label: "View All", icon: ListFilter, end: true },
+  { to: "/admin/tracking/completed", label: "Completed", icon: CheckCircle2 },
+  { to: "/admin/tracking/pending", label: "Pending", icon: Clock },
+  { to: "/admin/tracking/overdue", label: "Overdue", icon: AlertTriangle },
+  { to: "/admin/tracking/deadline-passed", label: "Late Submissions", icon: Timer },
 ];
 
 export default function Sidebar({ open, onClose }) {
@@ -137,14 +140,15 @@ export default function Sidebar({ open, onClose }) {
                 Menu
               </p>
               
-              {userMainLinks.map((l) => (
+              {/* 1. Dashboard & My Tasks */}
+              {userMainLinksTop.map((l) => (
                 <NavLink key={l.to} to={l.to} className={navItemClass} onClick={onClose}>
                   <l.icon size={18} />
                   {l.label}
                 </NavLink>
               ))}
 
-              {/* User Tracking Dropdown */}
+              {/* 2. Tracking Dropdown (Now second in the list) */}
               <div>
                 <button
                   onClick={handleTrackingClick}
@@ -182,10 +186,13 @@ export default function Sidebar({ open, onClose }) {
                 </div>
               </div>
 
-              <NavLink to="/completed" className={navItemClass} onClick={onClose}>
-                <CheckCircle2 size={18} />
-                Completed
-              </NavLink>
+              {/* 3. Messages (Now at the bottom) */}
+              {userMainLinksBottom.map((l) => (
+                <NavLink key={l.to} to={l.to} className={navItemClass} onClick={onClose}>
+                  <l.icon size={18} />
+                  {l.label}
+                </NavLink>
+              ))}
             </>
           )}
 

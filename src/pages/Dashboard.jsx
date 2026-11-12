@@ -130,8 +130,8 @@ export default function Dashboard() {
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead>
-                <tr className="text-left text-slate-600 border-b border-slate-200">
+              <thead className="bg-indigo-600" >
+                <tr className="text-left text-white border-b border-slate-200">
                   <th className="px-5 py-3 font-bold">Task</th>
                   <th className="px-5 py-3 font-bold">Assignee</th>
                   <th className="px-5 py-3 font-bold">Due</th>

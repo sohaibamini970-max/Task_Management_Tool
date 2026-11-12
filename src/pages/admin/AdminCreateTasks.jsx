@@ -8,6 +8,8 @@ import {
   Clock,
   Save,
   Search,
+  ListChecks,
+  Trash2,
 } from "lucide-react";
 import { useTasks } from "../../context/TaskContext";
 
@@ -42,8 +44,22 @@ export default function AdminCreateTasks() {
     status: "Pending",
   });
 
+  // Work Breakdown State
+  const [workSteps, setWorkSteps] = useState([]);
+  const [newStep, setNewStep] = useState("");
+
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleAddStep = () => {
+    if (!newStep.trim()) return;
+    setWorkSteps([...workSteps, { id: Math.random().toString(36).slice(2, 9), title: newStep.trim(), done: false }]);
+    setNewStep("");
+  };
+
+  const handleRemoveStep = (id) => {
+    setWorkSteps(workSteps.filter(s => s.id !== id));
   };
 
   const handleSubmit = (e) => {
@@ -52,7 +68,7 @@ export default function AdminCreateTasks() {
 
     createTask({
       ...formData,
-      workBreakdown: [],
+      workBreakdown: workSteps, // 👈 Include the breakdown!
       challenges: [],
       submission: null,
     });
@@ -66,6 +82,7 @@ export default function AdminCreateTasks() {
       priority: "Medium",
       status: "Pending",
     });
+    setWorkSteps([]);
     alert("Task created and assigned successfully!");
   };
 
@@ -88,7 +105,7 @@ export default function AdminCreateTasks() {
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
         
         {/* LEFT: CREATE TASK FORM */}
-        <div className="xl:col-span-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-5 self-start">
+        <div className="xl:col-span-5 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-5 self-start">
           <h2 className="font-bold text-lg mb-4 dark:text-white flex items-center gap-2">
             <Plus size={18} className="text-primary-500" /> Create & Assign
           </h2>
@@ -112,33 +129,34 @@ export default function AdminCreateTasks() {
                 name="description"
                 value={formData.description}
                 onChange={handleChange}
-                rows={3}
+                rows={2}
                 placeholder="Provide clear instructions..."
                 className={inputClass + " resize-none"}
               />
             </div>
 
-            <div>
-              <label className="block text-sm font-semibold mb-1.5 dark:text-slate-200">Assign To *</label>
-              <input
-                required
-                name="assignee"
-                value={formData.assignee}
-                onChange={handleChange}
-                placeholder="e.g. Sarah K."
-                className={inputClass}
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-semibold mb-1.5 dark:text-slate-200">Due Date</label>
-              <input
-                type="date"
-                name="due"
-                value={formData.due}
-                onChange={handleChange}
-                className={inputClass}
-              />
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-sm font-semibold mb-1.5 dark:text-slate-200">Assign To *</label>
+                <input
+                  required
+                  name="assignee"
+                  value={formData.assignee}
+                  onChange={handleChange}
+                  placeholder="e.g. Sarah K."
+                  className={inputClass}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold mb-1.5 dark:text-slate-200">Due Date</label>
+                <input
+                  type="date"
+                  name="due"
+                  value={formData.due}
+                  onChange={handleChange}
+                  className={inputClass}
+                />
+              </div>
             </div>
 
             <div className="grid grid-cols-2 gap-3">
@@ -151,7 +169,7 @@ export default function AdminCreateTasks() {
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-semibold mb-1.5 dark:text-slate-200">Status</label>
+                <label className="block text-sm font-semibold mb-1.5 dark:text-slate-200">Initial Status</label>
                 <select name="status" value={formData.status} onChange={handleChange} className={inputClass}>
                   <option>Pending</option>
                   <option>In Progress</option>
@@ -159,9 +177,45 @@ export default function AdminCreateTasks() {
               </div>
             </div>
 
+            {/* WORK BREAKDOWN ASSIGNMENT */}
+            <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
+              <label className="block text-sm font-semibold mb-2 dark:text-slate-200 flex items-center gap-2">
+                <ListChecks size={16} className="text-primary-500"/> Assign Task Work
+              </label>
+              
+              <div className="space-y-2 mb-3">
+                {workSteps.map((s, i) => (
+                  <div key={s.id} className="flex items-center gap-2 p-2 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm">
+                    <span className="w-5 h-5 rounded-full bg-primary-100 text-primary-700 flex items-center justify-center text-xs font-bold shrink-0">{i+1}</span>
+                    <span className="flex-1 truncate dark:text-slate-200">{s.title}</span>
+                    <button type="button" onClick={() => handleRemoveStep(s.id)} className="text-slate-400 hover:text-red-500">
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+
+              <div className="flex gap-2">
+                <input
+                  value={newStep}
+                  onChange={(e) => setNewStep(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddStep())}
+                  placeholder="e.g. Create wireframes..."
+                  className={inputClass + " text-sm py-2"}
+                />
+                <button
+                  type="button"
+                  onClick={handleAddStep}
+                  className="px-3 py-2 bg-primary-100 text-primary-700 dark:bg-primary-900/40 dark:text-primary-300 rounded-xl font-bold hover:bg-primary-200 transition"
+                >
+                  Add
+                </button>
+              </div>
+            </div>
+
             <button
               type="submit"
-              className="w-full flex items-center justify-center gap-2 mt-2 px-5 py-3 rounded-xl text-sm font-semibold text-white bg-primary-600 hover:bg-primary-700 shadow-lg shadow-primary-600/20 transition active:scale-95"
+              className="w-full flex items-center justify-center gap-2 mt-4 px-5 py-3 rounded-xl text-sm font-semibold text-white bg-primary-600 hover:bg-primary-700 shadow-lg shadow-primary-600/20 transition active:scale-95"
             >
               <Save size={16} /> Create Task
             </button>
@@ -169,7 +223,7 @@ export default function AdminCreateTasks() {
         </div>
 
         {/* RIGHT: TASK TABLE */}
-        <div className="xl:col-span-8 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 flex flex-col overflow-hidden">
+        <div className="xl:col-span-7 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 flex flex-col overflow-hidden">
           <div className="p-5 border-b border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <h2 className="font-bold text-lg dark:text-white flex items-center gap-2">
               <ListTodo size={18} className="text-primary-500" /> Task Directory
@@ -193,7 +247,6 @@ export default function AdminCreateTasks() {
                   <th className="px-5 py-3 font-bold whitespace-nowrap">Assignee</th>
                   <th className="px-5 py-3 font-bold whitespace-nowrap">Due Date</th>
                   <th className="px-5 py-3 font-bold whitespace-nowrap">Status</th>
-                  <th className="px-5 py-3 font-bold whitespace-nowrap">Priority</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -203,6 +256,12 @@ export default function AdminCreateTasks() {
                       <p className="font-semibold text-slate-800 dark:text-slate-100 max-w-[200px] truncate">
                         {t.title}
                       </p>
+                      {/* Show number of steps assigned */}
+                      {(t.workBreakdown?.length > 0) && (
+                        <span className="text-[10px] font-bold text-primary-600 bg-primary-50 dark:bg-primary-900/30 px-1.5 py-0.5 rounded-md mt-1 inline-block">
+                          {t.workBreakdown.length} Steps
+                        </span>
+                      )}
                     </td>
                     <td className="px-5 py-3 whitespace-nowrap text-slate-600 dark:text-slate-300">
                       <span className="flex items-center gap-1.5">
@@ -222,16 +281,11 @@ export default function AdminCreateTasks() {
                         {t.status}
                       </span>
                     </td>
-                    <td className="px-5 py-3 whitespace-nowrap">
-                      <span className={`text-[10px] font-bold uppercase px-2 py-1 rounded-md ${priorityColor[t.priority]}`}>
-                        {t.priority}
-                      </span>
-                    </td>
                   </tr>
                 ))}
                 {filteredTasks.length === 0 && (
                   <tr>
-                    <td colSpan="5" className="px-5 py-8 text-center text-slate-400 italic">
+                    <td colSpan="4" className="px-5 py-8 text-center text-slate-400 italic">
                       No tasks found.
                     </td>
                   </tr>

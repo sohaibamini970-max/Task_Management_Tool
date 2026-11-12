@@ -77,12 +77,10 @@ const fmtDate = (iso) => {
 const uid = () => Math.random().toString(36).slice(2, 9);
 
 /* ============================================================
-   TASK WORK MODAL — Fully editable
+   TASK WORK MODAL — Hybrid View (Admin assigned + User added)
    ============================================================ */
 function TaskWorkModal({ task, onClose, onUpdate }) {
   const [newStep, setNewStep] = useState("");
-  const [editingStepId, setEditingStepId] = useState(null);
-  const [editingValue, setEditingValue] = useState("");
 
   if (!task) return null;
 
@@ -90,36 +88,25 @@ function TaskWorkModal({ task, onClose, onUpdate }) {
   const completed = steps.filter((s) => s.done).length;
   const pct = steps.length ? Math.round((completed / steps.length) * 100) : 0;
 
-  const save = (next) => onUpdate(task.id, { workBreakdown: next });
+  // Toggle done status
+  const toggleStep = (id) => {
+    const next = steps.map((s) => (s.id === id ? { ...s, done: !s.done } : s));
+    onUpdate(task.id, { workBreakdown: next });
+  };
 
+  // Add new step
   const addStep = () => {
     const title = newStep.trim();
     if (!title) return;
-    save([...steps, { id: uid(), title, done: false }]);
+    const next = [...steps, { id: uid(), title, done: false }];
+    onUpdate(task.id, { workBreakdown: next });
     setNewStep("");
   };
 
-  const toggleStep = (id) => {
-    save(steps.map((s) => (s.id === id ? { ...s, done: !s.done } : s)));
-  };
-
+  // Remove step
   const removeStep = (id) => {
-    save(steps.filter((s) => s.id !== id));
-  };
-
-  const startEdit = (step) => {
-    setEditingStepId(step.id);
-    setEditingValue(step.title);
-  };
-
-  const commitEdit = () => {
-    const title = editingValue.trim();
-    if (!title) {
-      setEditingStepId(null);
-      return;
-    }
-    save(steps.map((s) => (s.id === editingStepId ? { ...s, title } : s)));
-    setEditingStepId(null);
+    const next = steps.filter((s) => s.id !== id);
+    onUpdate(task.id, { workBreakdown: next });
   };
 
   return (
@@ -131,15 +118,12 @@ function TaskWorkModal({ task, onClose, onUpdate }) {
             <div className="flex items-center gap-2 mb-1">
               <ListChecks size={18} className="text-primary-600 dark:text-primary-400" />
               <span className="text-xs font-bold uppercase text-primary-600 dark:text-primary-400 tracking-wide">
-                Task Work
+                Task Work Breakdown
               </span>
             </div>
             <h3 className="text-lg font-bold dark:text-white truncate">{task.title}</h3>
           </div>
-          <button
-            onClick={onClose}
-            className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 flex-shrink-0"
-          >
+          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 flex-shrink-0">
             <X size={18} />
           </button>
         </div>
@@ -156,36 +140,29 @@ function TaskWorkModal({ task, onClose, onUpdate }) {
 
           <div>
             <div className="flex items-center justify-between mb-2">
-              <p className="text-xs font-bold uppercase text-slate-500 dark:text-slate-400">
-                Work Progress
-              </p>
-              <p className="text-sm font-bold dark:text-white">
-                {completed}/{steps.length} · {pct}%
-              </p>
+              <p className="text-xs font-bold uppercase text-slate-500 dark:text-slate-400">Work Progress</p>
+              <p className="text-sm font-bold dark:text-white">{completed}/{steps.length} · {pct}%</p>
             </div>
             <div className="h-2.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-              <div
-                className="h-full bg-gradient-to-r from-primary-500 to-emerald-500 rounded-full transition-all duration-300"
-                style={{ width: `${pct}%` }}
-              />
+              <div className="h-full bg-gradient-to-r from-primary-500 to-emerald-500 rounded-full transition-all duration-300" style={{ width: `${pct}%` }} />
             </div>
           </div>
 
           <div>
             <p className="text-xs font-bold uppercase text-slate-500 dark:text-slate-400 mb-2">
-              Work Breakdown ({steps.length})
+              Breakdown Checklist ({steps.length})
             </p>
 
             {steps.length === 0 ? (
-              <p className="text-sm text-slate-400 dark:text-slate-500 italic py-3 text-center bg-slate-50 dark:bg-slate-800/50 rounded-xl">
-                No steps yet — add your first one below.
+              <p className="text-sm text-slate-400 dark:text-slate-500 italic py-4 text-center bg-slate-50 dark:bg-slate-800/50 rounded-xl">
+                No work breakdown yet. Add your first step below.
               </p>
             ) : (
               <div className="space-y-2">
                 {steps.map((s) => (
                   <div
                     key={s.id}
-                    className="group flex items-center gap-2 p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800"
+                    className="group flex items-center gap-3 p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800 transition"
                   >
                     <button
                       onClick={() => toggleStep(s.id)}
@@ -193,38 +170,19 @@ function TaskWorkModal({ task, onClose, onUpdate }) {
                       aria-label={s.done ? "Mark incomplete" : "Mark complete"}
                     >
                       {s.done ? (
-                        <CheckCircle2 size={18} className="text-emerald-500" />
+                        <CheckCircle2 size={20} className="text-emerald-500" />
                       ) : (
-                        <CircleDot size={18} className="text-slate-400" />
+                        <CircleDot size={20} className="text-slate-400" />
                       )}
                     </button>
-
-                    {editingStepId === s.id ? (
-                      <input
-                        autoFocus
-                        value={editingValue}
-                        onChange={(e) => setEditingValue(e.target.value)}
-                        onBlur={commitEdit}
-                        onKeyDown={(e) => e.key === "Enter" && commitEdit()}
-                        className="flex-1 min-w-0 px-2 py-1 rounded-lg text-sm bg-white dark:bg-slate-900 border border-primary-400 dark:border-primary-500 text-slate-800 dark:text-slate-100 outline-none"
-                      />
-                    ) : (
-                      <p
-                        onClick={() => startEdit(s)}
-                        className={`flex-1 min-w-0 text-sm font-medium cursor-text ${
-                          s.done
-                            ? "text-slate-500 dark:text-slate-400 line-through"
-                            : "text-slate-700 dark:text-slate-200"
-                        }`}
-                        title="Click to edit"
-                      >
-                        {s.title}
-                      </p>
-                    )}
+                    
+                    <p className={`flex-1 text-sm font-medium ${s.done ? "text-slate-500 dark:text-slate-400 line-through" : "text-slate-700 dark:text-slate-200"}`}>
+                      {s.title}
+                    </p>
 
                     <button
                       onClick={() => removeStep(s.id)}
-                      className="p-1 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 transition flex-shrink-0"
+                      className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 transition flex-shrink-0"
                       aria-label="Remove step"
                     >
                       <Trash2 size={14} />
@@ -234,17 +192,18 @@ function TaskWorkModal({ task, onClose, onUpdate }) {
               </div>
             )}
 
-            <div className="flex gap-2 mt-3">
+            {/* Add step input */}
+            <div className="flex gap-2 mt-4">
               <input
                 value={newStep}
                 onChange={(e) => setNewStep(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && addStep()}
-                placeholder="Add a step..."
-                className="flex-1 px-3 py-2 rounded-xl text-sm bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary-500 transition"
+                placeholder="Add a new step..."
+                className="flex-1 px-3 py-2.5 rounded-xl text-sm bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary-500 transition"
               />
               <button
                 onClick={addStep}
-                className="flex items-center gap-1 px-4 py-2 rounded-xl text-sm font-bold text-white bg-primary-600 hover:bg-primary-700 transition active:scale-95"
+                className="flex items-center gap-1 px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-primary-600 hover:bg-primary-700 transition active:scale-95"
               >
                 <Plus size={16} /> Add
               </button>
